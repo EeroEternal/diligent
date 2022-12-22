@@ -1,3 +1,6 @@
+# config file to store key and secret, not upload to github
+tests/data/config.toml
+
 # datasets
 datasets/
 

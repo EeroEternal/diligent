@@ -2,18 +2,34 @@
 
 from fastapi import FastAPI, UploadFile
 from fastapi.responses import Response
+import uvicorn
+
 from ..storage import Client
 
 
 class Server:
-    """FastApi server."""
+    """API server."""
 
     def __init__(self):
         """Initialize the FastApi server."""
         self.app = FastAPI()
+        self.client = None
+        self.bucket = None
 
-    def run(self):
-        """Run the FastApi server."""
+    def init_obs(self, access_key, secret_key, endpoint, bucket):
+        """Initialize OBS backend.
+
+        Args:
+            access_key(str): OBS access key.
+            secret_key (str): OBS secret access key.
+            endpoint (str): OBS server address. e.g. https://obs.cn-north-1.myhwclouds.com
+        """
+        self.client = Client(access_key, secret_key, endpoint)
+        self.bucket = bucket
+
+    def set_router(self):
+        """Initialize the FastApi server."""
+        self.app = FastAPI()
 
         @self.app.get("/image")
         async def image(id):
@@ -46,21 +62,20 @@ class Server:
             Args:
                 file (UploadFile): file to upload.
             """
-            access_id = "access_id"
-            secret_key = "secret_key"
-            endpoint = "https://obs.cn-north-1.myhwclouds.com"
-            client = Client(access_id, secret_key, endpoint)
-
-            bucket = "bucket"
             filename = file.filename
             content_type = file.content_type
-            result = client.add(bucket, filename, content_type, file.file)
+            result = self.client.add(self.bucket, filename, content_type, file.file)
 
             return {"result": result}
 
-    def stop(self):
-        """Stop the FastApi server."""
+    def run(self, host, port):
+        """Run the server.
 
-    def __call__(self):
-        """Call the FastApi server."""
-        return self.app
+        Args:
+            host (str): server host.
+            port (int): server port.
+        """
+        uvicorn.run(self.app, host=host, port=port)
+
+
+

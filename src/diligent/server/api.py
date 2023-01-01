@@ -1,7 +1,9 @@
 """FastApi server."""
+from typing import List
 
 from fastapi import FastAPI, UploadFile
 from fastapi.responses import Response
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from ..storage import Client
@@ -13,6 +15,9 @@ class Server:
     def __init__(self):
         """Initialize the FastApi server."""
         self.app = FastAPI()
+
+
+
         self.client = None
         self.bucket = None
 
@@ -26,6 +31,7 @@ class Server:
         """
         self.client = Client(access_key, secret_key, endpoint)
         self.bucket = bucket
+
 
     def set_router(self):
         """Initialize the FastApi server."""
@@ -55,18 +61,42 @@ class Server:
             """
             return Response(b"markdown binary data", media_type="text/markdown")
 
-        @self.app.post("/upload")
-        async def upload(file):
-            """Upload file.
+        @self.app.post("/upload/")
+        async def upload(files: List[UploadFile]):
+            """Upload files.
 
             Args:
-                file (UploadFile): file to upload.
+                files ( List[UploadFile] ): file to upload.
             """
-            filename = file.filename
-            content_type = file.content_type
-            result = self.client.add(self.bucket, filename, content_type, file.file)
+            all_success = True
 
-            return {"result": result}
+            for file in files:
+                filename = file.filename
+                content_type = file.content_type
+                result = self.client.add(self.bucket, filename, content_type, file.file)
+                if not result:
+                    all_success = False
+
+            return {"result": all_success}
+
+        # **must** after all router, set cors middleware can work
+        self._set_cors()
+
+    def _set_cors(self):
+        """Set CORS."""
+        # set cors
+        origins = [
+            "*"
+        ]
+
+        # add cors middleware
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     def run(self, host, port):
         """Run the server.

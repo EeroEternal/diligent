@@ -27,6 +27,13 @@ class Client:
             This is the actual Python file that you can pass directly to other functions
             or libraries that expect a "file-like" object.
         """
+        # check is has same file
+        result = self.obs.getObjectMetadata(bucket, filename)
+        if result.status < 300:
+            # has same file
+            return False
+
+        # upload file to obs
         headers = PutObjectHeader(contentType=content_type)
         result = self.obs.putContent(bucket, filename, file, headers)
 
@@ -52,6 +59,15 @@ class Client:
 
         # delete failed
         return False
+
+    def get_object(self, bucket, filename):
+        """Get file from OBS.
+
+        Args:
+            bucket (str): OBS bucket name.
+            filename (str): filename
+        """
+        return self.obs.getObject(bucket, filename, loadStreamInMemory=True)
 
 
     def close(self):

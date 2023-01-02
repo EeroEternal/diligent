@@ -1,8 +1,9 @@
 """FastApi server."""
 from typing import List
+from io import BytesIO
 
 from fastapi import FastAPI, UploadFile
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -37,17 +38,29 @@ class Server:
         """Initialize the FastApi server."""
         self.app = FastAPI()
 
-        @self.app.get("/image")
-        async def image(id):
+        @self.app.get("/image/{image_name}")
+        async def image(image_name):
             """Get image.
 
             Args:
-                id (str): image id.
+                image_name (str): image id.
 
             returns:
                 Response : image response.
             """
-            return Response(b"image binary data", media_type="image/png")
+            # get image
+            result = self.client.get_object(self.bucket, image_name)
+
+            if result.status < 300:
+                content_type = result.body['contentType']
+
+                # change bytes to stream
+                stream = BytesIO(result.body.buffer)
+
+                return StreamingResponse(stream, media_type=content_type)
+
+            # return not found
+            return Response(status_code=404)
 
         @self.app.get("/markdown")
         async def markdown(id):

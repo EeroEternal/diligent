@@ -45,8 +45,8 @@ def get_config():
     cfg.VCS = "git"
     cfg.style = "pep440"
     cfg.tag_prefix = ""
-    cfg.parentdir_prefix = "magicbag-"
-    cfg.versionfile_source = "src/magicbag/_version.py"
+    cfg.parentdir_prefix = "diligent-"
+    cfg.versionfile_source = "src/diligent/_version.py"
     cfg.verbose = False
     return cfg
 

@@ -30,7 +30,9 @@ def create_new_patch_release():
     try:
         last_version_number = get_last_version()
     except subprocess.CalledProcessError as err:
+        print('got error')
         if err.stderr.decode("utf8").startswith("HTTP 404:"):
+            print('error start Http 404')
             # The project doesn't have any releases yet.
             new_version_number = "0.0.1"
         else:

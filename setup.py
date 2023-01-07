@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 try:
     from setuptools import find_packages, setup
+    import versioneer
 except ImportError:
     import distribute_setup
 
     distribute_setup.use_setuptools()
     from setuptools import setup, find_packages
+    import versioneer
 
 # pylint: disable=invalid-name
 long_desc = """diligent is a markdown and file serve based on cloud storage"""
@@ -15,11 +17,12 @@ requires = ["fastapi", "click", "esdk-obs-python"]
 
 setup(
     name="diligent",
-    version="0.0.1",
     url="https://github.com/lipicoder/diligent",
     license="MIT License",
     author="lipi",
     author_email="lipicoder@qq.com",
+    version = versioneer.get_version(),
+    cmdclass = versioneer.get_cmdclass(),
     description="diligent is a markdown and file serve based on cloud storage",
     long_description=long_desc,
     zip_safe=True,

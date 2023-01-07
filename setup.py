@@ -18,7 +18,6 @@ requires = ["fastapi", "click", "esdk-obs-python"]
 setup(
     name="diligent",
     url="https://github.com/lipicoder/diligent",
-    license="MIT License",
     author="lipi",
     author_email="lipicoder@qq.com",
     version = versioneer.get_version(),
@@ -33,5 +32,4 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=True,
-    install_requires=requires,
 )

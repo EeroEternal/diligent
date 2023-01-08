@@ -1,13 +1,13 @@
 """FastApi server."""
-from typing import List
 from io import BytesIO
+from typing import List
 
-from fastapi import FastAPI, UploadFile
-from fastapi.responses import Response, StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from fastapi import FastAPI, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response, StreamingResponse
 
-from ..storage import Client
+from wareroom import Client
 
 
 class Server:
@@ -16,8 +16,6 @@ class Server:
     def __init__(self):
         """Initialize the FastApi server."""
         self.app = FastAPI()
-
-
 
         self.client = None
         self.bucket = None
@@ -29,10 +27,10 @@ class Server:
             access_key(str): OBS access key.
             secret_key (str): OBS secret access key.
             endpoint (str): OBS server address. e.g. https://obs.cn-north-1.myhwclouds.com
+            bucket (str): OBS bucket name.
         """
         self.client = Client(access_key, secret_key, endpoint)
         self.bucket = bucket
-
 
     def set_router(self):
         """Initialize the FastApi server."""
@@ -49,13 +47,13 @@ class Server:
                 Response : image response.
             """
             # get image
-            result = self.client.get_object(self.bucket, image_name)
+            result, content, buffer = self.client.get(self.bucket, image_name)
 
-            if result.status < 300:
-                content_type = result.body['contentType']
+            if result:
+                content_type = content
 
                 # change bytes to stream
-                stream = BytesIO(result.body.buffer)
+                stream = BytesIO(buffer)
 
                 return StreamingResponse(stream, media_type=content_type)
 
@@ -63,15 +61,16 @@ class Server:
             return Response(status_code=404)
 
         @self.app.get("/markdown")
-        async def markdown(id):
+        async def markdown(name):
             """Get markdown.
 
             Args:
-                id (str): markdown id.
+                name (str): markdown name.
 
             returns:
                 Response : markdown response.
             """
+            print(f'get markdown {name}')
             return Response(b"markdown binary data", media_type="text/markdown")
 
         @self.app.post("/upload/")
@@ -81,16 +80,22 @@ class Server:
             Args:
                 files ( List[UploadFile] ): file to upload.
             """
-            all_success = True
+
+            # upload files result list
+            results = []
 
             for file in files:
                 filename = file.filename
                 content_type = file.content_type
-                result = self.client.add(self.bucket, filename, content_type, file.file)
-                if not result:
-                    all_success = False
 
-            return {"result": all_success}
+                # upload file
+                result, content = self.client.add(self.bucket, filename, content_type,
+                                                  file.file)
+
+                # add result to list
+                results.append({result: result, content: content})
+
+            return {"results": results}
 
         # **must** after all router, set cors middleware can work
         self._set_cors()
@@ -98,9 +103,7 @@ class Server:
     def _set_cors(self):
         """Set CORS."""
         # set cors
-        origins = [
-            "*"
-        ]
+        origins = ["*"]
 
         # add cors middleware
         self.app.add_middleware(
@@ -119,6 +122,3 @@ class Server:
             port (int): server port.
         """
         uvicorn.run(self.app, host=host, port=port)
-
-
-

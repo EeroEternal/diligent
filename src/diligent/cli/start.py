@@ -1,11 +1,13 @@
 """Start server."""
+from wareroom import read_config
+
 from ..server import Server
-from .obs import obs_config, server_config
+from .obs import server_config
 
 
 def start_server(toml):
     """Start the Diligent server."""
-    access_key_id, secret_access_key, endpoint, bucket = obs_config(toml)
+    access_key_id, secret_access_key, endpoint, bucket = read_config(toml)
 
     # start server
     server = Server()

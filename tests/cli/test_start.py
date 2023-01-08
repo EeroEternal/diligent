@@ -2,7 +2,6 @@
 import pytest
 from click.testing import CliRunner
 from diligent import cli
-from diligent.cli import start_server
 
 
 @pytest.mark.parametrize("filepath", ["../data/config.toml"])

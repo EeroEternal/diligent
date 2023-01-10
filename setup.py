@@ -1,14 +1,7 @@
 """Setup configuration for the package."""
 # -*- coding: utf-8 -*-
-try:
-    from setuptools import find_packages, setup
-    import versioneer
-except ImportError:
-    import distribute_setup
-
-    distribute_setup.use_setuptools()
-    from setuptools import setup, find_packages
-    import versioneer
+from setuptools import find_packages, setup
+import versioneer
 
 # pylint: disable=invalid-name
 long_desc = """diligent is a markdown and file serve based on cloud storage"""

@@ -1,6 +1,6 @@
 """FastApi server."""
 from io import BytesIO
-from typing import List
+from typing import List, Tuple, overload
 
 import uvicorn
 from fastapi import FastAPI, UploadFile
@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 
 from wareroom import Client
+from ..auth import Credential
 
 
 class Server:
@@ -19,18 +20,40 @@ class Server:
 
         self.client = None
         self.bucket = None
+        self.endpoint = None
 
-    def init_obs(self, access_key, secret_key, endpoint, bucket):
-        """Initialize OBS backend.
+    @overload
+    def init_storage(self, credential: Credential):
+        """Initialize credential and storage client.
 
-        Args:
-            access_key(str): OBS access key.
-            secret_key (str): OBS secret access key.
-            endpoint (str): OBS server address. e.g. https://obs.cn-north-1.myhwclouds.com
-            bucket (str): OBS bucket name.
+        :param credential: Credential object.
+        :type credential: Credential
         """
-        self.client = Client(access_key, secret_key, endpoint)
-        self.bucket = bucket
+
+    @overload
+    def init_storage(self, credential: Tuple) -> None:
+        """Initialize credentials and storage client.
+
+        :param credential: Credential information
+        :type credential: Tuple.
+            include (access_key_id, secret_access_key, endpoint, bucket)
+        """
+
+    def init_storage(self, credential):
+        """Initialize credential and storage client.
+
+        :param credential: Credential object.
+        :type credential: different type. Credential or Tuple
+        """
+        if isinstance(credential, Credential):
+            self.client = Client(credential.access_key_id,
+                                 credential.secret_access_key,
+                                 credential.endpoint)
+            self.bucket = credential.bucket
+
+        if isinstance(credential, Tuple):
+            self.client = Client(credential[0], credential[1], credential[2])
+            self.bucket = credential[3]
 
     def set_router(self):
         """Initialize the FastApi server."""
@@ -64,11 +87,10 @@ class Server:
         async def markdown(name):
             """Get markdown.
 
-            Args:
-                name (str): markdown name.
+            :param name: markdown name.
+            :type name: str
 
-            returns:
-                Response : markdown response.
+            :return: markdown content.
             """
             print(f'get markdown {name}')
             return Response(b"markdown binary data", media_type="text/markdown")
@@ -77,8 +99,8 @@ class Server:
         async def upload(files: List[UploadFile]):
             """Upload files.
 
-            Args:
-                files ( List[UploadFile] ): file to upload.
+            :param files: files to upload.
+            :type files: List[UploadFile]
             """
 
             # upload files result list
@@ -89,8 +111,8 @@ class Server:
                 content_type = file.content_type
 
                 # upload file
-                result, content = self.client.add(self.bucket, filename, content_type,
-                                                  file.file)
+                result, content = self.client.add(self.bucket, filename,
+                                                  content_type, file.file)
 
                 # add result to list
                 results.append({result: result, content: content})
@@ -117,8 +139,9 @@ class Server:
     def run(self, host, port):
         """Run the server.
 
-        Args:
-            host (str): server host.
-            port (int): server port.
+        :param host: host.
+        :type host: str
+        :param port: port.
+        :type port: int
         """
         uvicorn.run(self.app, host=host, port=port)

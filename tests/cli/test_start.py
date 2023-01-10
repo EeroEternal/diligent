@@ -12,12 +12,3 @@ def test_start(filepath):
     result = runner.invoke(cli, ["-t", filepath, "start"])
 
     assert result.exit_code == 0
-
-
-# @pytest.mark.parametrize("filepath", ["../data/config.toml"])
-# def test_start_func(filepath):
-#     """Test start function"""
-#     start_server(filepath)
-
-
-

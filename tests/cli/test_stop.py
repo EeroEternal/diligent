@@ -1,5 +1,4 @@
 """Test stop cli."""
-import pytest
 from click.testing import CliRunner
 from diligent import cli
 

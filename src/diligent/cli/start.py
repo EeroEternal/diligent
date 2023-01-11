@@ -1,4 +1,5 @@
 """Start server."""
+import tomllib
 
 from ..auth import Credential
 from ..server import Server
@@ -6,23 +7,20 @@ from ..server import Server
 
 def server_config(toml):
     """Read server config."""
-    with open(toml, 'r', encoding='utf-8') as file:
-        config = toml.load(file)
+    with open(toml, 'rb') as file:
+        config = tomllib.load(file)
         return config["server"]["host"], config["server"]["port"]
 
 
 def start_server(toml):
     """Start the Diligent server."""
-    credential = Credential(toml)
-
+    credential = Credential.from_file(toml)
 
     # start server
     server = Server()
 
     # init obs
-    server.init_storage(
-        credential.access_key_id, credential.secret_access_key,
-                    credential.endpoint, credential.bucket)
+    server.init_storage(credential)
 
     # set router . must behind init_obs
     server.set_router()

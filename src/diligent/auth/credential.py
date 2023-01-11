@@ -6,45 +6,75 @@ import tomllib
 class Credential:
     """Credential class.
 
-    :param filepath: config file path.
-    :type filepath: str
-    :param kind: config kind, only obs now.
+    :param access_key_id: Access key ID.
+    :type access_key_id: str
+    :param secret_access_key: Secret access key.
+    :type secret_access_key: str
+    :param endpoint: Endpoint URL.
+    :type endpoint: str
+    :param kind: Storage type. As "obs" "s3" "minio" "gcs" "azure"
     :type kind: str
-
     """
 
-    def __init__(self, filepath, kind='obs'):
+    # pylint disable=too-many-arguments
+    def __init__(self, access_key_id, secret_access_key, endpoint, kind):
         """Constructor method.
         """
+        self._bucket = None
+        self._access_key_id = access_key_id
+        self._secret_access_key = secret_access_key
+        self._endpoint = endpoint
+        # kind is storage type. like "obs" "s3" "minio" "gcs" "azure"
+        self._kind = kind
+
+    @classmethod
+    def from_file(cls, filepath, kind='obs'):
+        """Initialize credential from config file.
+
+        :param filepath: config file path.
+        :type filepath: str
+        :param kind: config kind, only obs now.
+        :type kind: str
+
+        :return: Credential object.
+        :rtype: Credential
+        """
         result = read_config(filepath, kind)
-        self.access_key_id = result["access_key_id"]
-        self.secret_access_key = result["secret_access_key"]
-        self.endpoint = result["endpoint"]
-        self.bucket = result["bucket"]
+        return \
+            cls(result['access_key_id'],
+                result['secret_access_key'],
+                result['endpoint'],
+                kind)
 
     @property
     def access_key(self):
         """Access key property.
         """
-        return self.access_key_id
+        return self._access_key_id
 
     @property
     def secret_key(self):
         """Secret key property.
         """
-        return self.secret_access_key
+        return self._secret_access_key
 
     @property
     def bucket(self):
         """Bucket name property.
         """
-        return self.bucket
+        return self._bucket
+
+    @bucket.setter
+    def bucket(self, bucket):
+        """Bucket name setter.
+        """
+        self._bucket = bucket
 
     @property
-    def endpoint_url(self):
+    def endpoint(self):
         """Endpoint url property.
         """
-        return self.endpoint
+        return self._endpoint
 
 
 def read_config(filepath, kind):
@@ -58,7 +88,7 @@ def read_config(filepath, kind):
     :returns: dict include access_id, secret_key, endpoint, bucket.
     """
     print(f'kind: {kind}')
-    with open(filepath, 'r', encoding="utf-8") as file:
+    with open(filepath, 'rb') as file:
         config = tomllib.load(file)
 
         access_key_id = config["obs"]["access_key_id"]

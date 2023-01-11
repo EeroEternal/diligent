@@ -6,8 +6,8 @@ import uvicorn
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
-
 from wareroom import Client
+
 from ..auth import Credential
 
 
@@ -16,11 +16,11 @@ class Server:
 
     def __init__(self):
         """Initialize the FastApi server."""
-        self.app = FastAPI()
+        self._app = FastAPI()
 
-        self.client = None
-        self.bucket = None
-        self.endpoint = None
+        self._client = None
+        self._bucket = None
+        self._endpoint = None
 
     @overload
     def init_storage(self, credential: Credential):
@@ -46,20 +46,19 @@ class Server:
         :type credential: different type. Credential or Tuple
         """
         if isinstance(credential, Credential):
-            self.client = Client(credential.access_key_id,
-                                 credential.secret_access_key,
-                                 credential.endpoint)
-            self.bucket = credential.bucket
+            self._client = Client(credential)
+            self._bucket = credential.bucket
 
         if isinstance(credential, Tuple):
-            self.client = Client(credential[0], credential[1], credential[2])
-            self.bucket = credential[3]
+            credential_object = Credential(*credential)
+            self._client = Client(credential_object)
+            self._bucket = credential[3]
 
     def set_router(self):
         """Initialize the FastApi server."""
-        self.app = FastAPI()
+        self._app = FastAPI()
 
-        @self.app.get("/image/{image_name}")
+        @self._app.get("/image/{image_name}")
         async def image(image_name):
             """Get image.
 
@@ -70,7 +69,7 @@ class Server:
                 Response : image response.
             """
             # get image
-            result, content, buffer = self.client.get(self.bucket, image_name)
+            result, content, buffer = self._client.get(self._bucket, image_name)
 
             if result:
                 content_type = content
@@ -83,7 +82,7 @@ class Server:
             # return not found
             return Response(status_code=404)
 
-        @self.app.get("/markdown")
+        @self._app.get("/markdown")
         async def markdown(name):
             """Get markdown.
 
@@ -95,7 +94,7 @@ class Server:
             print(f'get markdown {name}')
             return Response(b"markdown binary data", media_type="text/markdown")
 
-        @self.app.post("/upload/")
+        @self._app.post("/upload/")
         async def upload(files: List[UploadFile]):
             """Upload files.
 
@@ -111,8 +110,8 @@ class Server:
                 content_type = file.content_type
 
                 # upload file
-                result, content = self.client.add(self.bucket, filename,
-                                                  content_type, file.file)
+                result, content = self._client.add(self._bucket, filename,
+                                                   content_type, file.file)
 
                 # add result to list
                 results.append({result: result, content: content})
@@ -128,7 +127,7 @@ class Server:
         origins = ["*"]
 
         # add cors middleware
-        self.app.add_middleware(
+        self._app.add_middleware(
             CORSMiddleware,
             allow_origins=origins,
             allow_credentials=True,
@@ -144,4 +143,4 @@ class Server:
         :param port: port.
         :type port: int
         """
-        uvicorn.run(self.app, host=host, port=port)
+        uvicorn.run(self._app, host=host, port=port)

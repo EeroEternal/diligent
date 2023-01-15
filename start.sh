@@ -1,0 +1,1 @@
+diligent start -t tests/data/config.toml

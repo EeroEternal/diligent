@@ -8,8 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from wareroom import Client
 
-from ..auth import Credential
-
+from wareroom import Credential, Bucket
 
 class Server:
     """API server."""
@@ -47,12 +46,24 @@ class Server:
         """
         if isinstance(credential, Credential):
             self._client = Client(credential)
-            self._bucket = credential.bucket
 
         if isinstance(credential, Tuple):
             credential_object = Credential(*credential)
             self._client = Client(credential_object)
-            self._bucket = credential[3]
+
+    @property
+    def bucket(self):
+        """Bucket property."""
+        return self._bucket
+
+    @bucket.setter
+    def bucket(self, bucket: Bucket):
+        """Set bucket.
+
+        :param bucket: bucket object.
+        :type bucket: Bucket
+        """
+        self._bucket = bucket
 
     def set_router(self):
         """Initialize the FastApi server."""
@@ -69,7 +80,7 @@ class Server:
                 Response : image response.
             """
             # get image
-            result, content, buffer = self._client.get(self._bucket, image_name)
+            result, content, buffer = self._client.get(image_name, self._bucket)
 
             if result:
                 content_type = content
@@ -110,8 +121,8 @@ class Server:
                 content_type = file.content_type
 
                 # upload file
-                result, content = self._client.add(self._bucket, filename,
-                                                   content_type, file.file)
+                result, content = self._client.add(filename, content_type,
+                                                   file.file, bucket=self._bucket)
 
                 # add result to list
                 results.append({result: result, content: content})

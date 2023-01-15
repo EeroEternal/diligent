@@ -6,7 +6,7 @@ import versioneer
 # pylint: disable=invalid-name
 long_desc = """diligent is a markdown and file serve based on cloud storage"""
 
-requires = ["fastapi", "click", "esdk-obs-python"]
+requires = ["fastapi", "click", "wareroom"]
 
 setup(
     name="diligent",

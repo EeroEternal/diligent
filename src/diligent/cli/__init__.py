@@ -15,7 +15,8 @@ def cli():
 
 # add start command
 @cli.command()
-@click.option('-t', '--toml', 'config_file', type=click.Path(exists=True), required=True)
+@click.option('-t', '--toml', 'config_file',
+              type=click.Path(exists=True), required=True)
 def start(config_file):
     """Start the Diligent server."""
     if not config_file:

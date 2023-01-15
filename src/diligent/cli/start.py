@@ -1,7 +1,7 @@
 """Start server."""
 import tomllib
 
-from ..auth import Credential
+from wareroom import Credential, Bucket
 from ..server import Server
 
 
@@ -18,6 +18,9 @@ def start_server(toml):
 
     # start server
     server = Server()
+
+    # read bucket name from config file
+    server.bucket = Bucket.from_file(toml)
 
     # init obs
     server.init_storage(credential)
